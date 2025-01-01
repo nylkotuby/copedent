@@ -3,6 +3,9 @@
 # https://github.com/tj/terminal-table
 require "terminal-table"
 
+# TODO NEXT - add pedals and knee levers
+
+
 ALL_NOTES = ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"]
 
 # high to low, add 1 to index to get to a string #
@@ -10,7 +13,7 @@ TUNING = ["F#", "C#", "G#", "D#", "B", "G#", "F#", "D#", "B", "G#", "E", "B"]
 
 # need to choose a CLI tools library
 ROOT = "B"
-TYPES = [:dom7]
+TYPES = [:major, :minor, :dom7]
 
 QUALITIES = {
   major: "3",
@@ -75,7 +78,7 @@ def main
   key = shift_key(to: ROOT)
   wanted_chord_qualities = QUALITIES.slice(*TYPES).values
 
-  (0..3).map do |fret|
+  (0..3).each do |fret|
     rows = convert(key:, fret:)
     # skip this fret if it doesn't represent a requested chord type
     next unless rows.flatten.intersect?(wanted_chord_qualities)
