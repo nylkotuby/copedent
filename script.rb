@@ -2,26 +2,36 @@
 
 # https://github.com/tj/terminal-table
 require "terminal-table"
+require "csv"
 
 # TODO NEXT - add pedals and knee levers
 # TODO add a hash or first-class object for frets
+# TODO need to choose a CLI tools library
 
-ALL_NOTES = ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"]
+# === PER-RUN USER CONFIG ===
+
+ROOT = "D"
+TYPES = [:major, :minor, :dom7]
+ENABLE_CLI = true
+ENABLE_CSV = true
+CSV_FILENAME = "#{TYPES.map(&:to_s).join("_")}_#{Time.now.to_i}_export.csv"
 
 # high to low, add 1 to index to get to a string #
 TUNING = ["E", "C#", "F#", "D", "B", "A", "F#", "E", "D", "C", "A", "D"]
 
-# need to choose a CLI tools library
-ROOT = "D"
-TYPES = [:major, :minor, :dom7]
+# === STATIC CONFIG ===
 
-ALL_TYPES = [:dom7]
+ALL_TYPES = [:major, :minor, :dom7] # unused, for reference
+
+ALL_NOTES = ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"]
+
 QUALITIES = {
   major: ["3"],
   minor: ["b3"],
   dom7: ["3", "b7"]
 }
 
+# TODO: use the 9+ qualities for QoL
 RELATIONS = [
   "Root",
   "b2",
@@ -45,6 +55,8 @@ RELATIONS = [
   "13"
 ]
 
+# === CODE ===
+
 def shift_key(to:)
   ALL_NOTES
     .slice_before(to)
@@ -66,21 +78,26 @@ def relation(key:, note:)
   RELATIONS[interval]
 end
 
-def convert(key:, fret:)
+# returns a fret, which is several columns and rows
+# long-term, might be better to do this less similarly to how it's done irl
+def convert_fret(key:, fret:)
   shift_tuning(key:, fret:)
     .map
     .with_index do |note, idx|
       fret_num = idx.zero? ? fret : ""
       [fret_num, idx + 1, note, relation(key:, note:)]
     end
-    .tap { |shifted| shifted.prepend(["#", "Str", "Note", "Int#"]) }
+    # TODO - header could be better suited somewhere else
+    .tap { |shifted| shifted.prepend(["Fr", "Str", "Note", "#"]) }
 end
 
-# check if the given fret has all of the required chord qualities for a given chord type
+# check if the given fret has all of the required chord qualities for configured chords
 # e.g. a major chord must have a 3, but a dom 7 must have a 3 and a b7
-def has_chord_type?(fret:, type:)
+def has_valid_chord?(fret:)
   notes = fret.transpose[3]
-  QUALITIES[type].all? { |qual| notes.include?(qual) }
+  TYPES.any? do |type|
+    QUALITIES[type].all? { |qual| notes.include?(qual) }
+  end
 end
 
 def main
