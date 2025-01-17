@@ -100,19 +100,37 @@ def has_valid_chord?(fret:)
   end
 end
 
+def print_to_terminal(columns:)
+  "Printing valid chords to terminal..."
+
+  columns.map do |col|
+    puts Terminal::Table.new(
+      headings: col[0],
+      rows: col[1..-1]
+    )
+  end
+end
+
+def export_csv(columns:)
+  "Exporting valid chords to CSV at #{CSV_FILENAME}..."
+  CSV.open(CSV_FILENAME, "w") do |csv|
+    columns.transpose.each { |col| csv << col.flatten }
+  end
+end
+
+# ======
+
 def main
   key = shift_key(to: ROOT)
 
-  (0..4)
-    .map { |fret| convert(key:, fret:) }
-    # only use frets with requested chord types
-    .select { |fret| TYPES.any? { |type| has_chord_type?(fret:, type:) } }
-    .map do |row|
-      puts Terminal::Table.new(
-        headings: row[0],
-        rows: row[1..-1]
-    )
-  end
+  # the copedent is read column-wise, so to make partial calculations,
+  # it only makes sense to do so in columnar blocks
+  columns = (0..4)
+    .map { |fret| convert_fret(key:, fret:) }
+    .select { |fret| has_valid_chord?(fret:) }
+
+  print_to_terminal(columns:) if ENABLE_CLI
+  export_csv(columns:) if ENABLE_CSV
 end
 
 main
