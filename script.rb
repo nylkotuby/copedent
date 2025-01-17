@@ -69,23 +69,24 @@ def convert(key:, fret:)
   shift_tuning(key:, fret:)
     .map
     .with_index do |note, idx|
-      [idx + 1, note, relation(key:, note:)]
+      fret_num = idx.zero? ? fret : ""
+      [fret_num, idx + 1, note, relation(key:, note:)]
     end
+    .tap { |shifted| shifted.prepend(["#", "Str", "Note", "Int#"]) }
 end
 
 def main
   key = shift_key(to: ROOT)
   wanted_chord_qualities = QUALITIES.slice(*TYPES).values
 
-  (0..3).each do |fret|
-    rows = convert(key:, fret:)
-    # skip this fret if it doesn't represent a requested chord type
-    next unless rows.flatten.intersect?(wanted_chord_qualities)
-
-    puts Terminal::Table.new(
-      title: "Fret #{fret}",
-      headings: ["Str", "Note", "#"],
-      rows:
+  (0..3)
+    .map { |fret| convert(key:, fret:) }
+    # only use frets with requested chord types
+    .select { |fret| fret.flatten.intersect?(wanted_chord_qualities) }
+    .map do |row|
+      puts Terminal::Table.new(
+        headings: row[0],
+        rows: row[1..-1]
     )
   end
 end
