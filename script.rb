@@ -4,7 +4,7 @@
 require "terminal-table"
 
 # TODO NEXT - add pedals and knee levers
-
+# TODO add a hash or first-class object for frets
 
 ALL_NOTES = ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"]
 
@@ -15,9 +15,10 @@ TUNING = ["E", "C#", "F#", "D", "B", "A", "F#", "E", "D", "C", "A", "D"]
 ROOT = "D"
 TYPES = [:major, :minor, :dom7]
 
+ALL_TYPES = [:dom7]
 QUALITIES = {
-  major: "3",
-  minor: "b3",
+  major: ["3"],
+  minor: ["b3"],
   dom7: ["3", "b7"]
 }
 
@@ -75,14 +76,20 @@ def convert(key:, fret:)
     .tap { |shifted| shifted.prepend(["#", "Str", "Note", "Int#"]) }
 end
 
+# check if the given fret has all of the required chord qualities for a given chord type
+# e.g. a major chord must have a 3, but a dom 7 must have a 3 and a b7
+def has_chord_type?(fret:, type:)
+  notes = fret.transpose[3]
+  QUALITIES[type].all? { |qual| notes.include?(qual) }
+end
+
 def main
   key = shift_key(to: ROOT)
-  wanted_chord_qualities = QUALITIES.slice(*TYPES).values
 
-  (0..3)
+  (0..4)
     .map { |fret| convert(key:, fret:) }
     # only use frets with requested chord types
-    .select { |fret| fret.flatten.intersect?(wanted_chord_qualities) }
+    .select { |fret| TYPES.any? { |type| has_chord_type?(fret:, type:) } }
     .map do |row|
       puts Terminal::Table.new(
         headings: row[0],
