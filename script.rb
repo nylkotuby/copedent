@@ -2,26 +2,36 @@
 
 # https://github.com/tj/terminal-table
 require "terminal-table"
+require "csv"
 
 # TODO NEXT - add pedals and knee levers
+# TODO add a hash or first-class object for frets
+# TODO need to choose a CLI tools library
 
+# === PER-RUN USER CONFIG ===
+
+ROOT = "D"
+TYPES = [:major, :minor, :dom7]
+ENABLE_CLI = true
+ENABLE_CSV = true
+CSV_FILENAME = "#{TYPES.map(&:to_s).join("_")}_#{Time.now.to_i}_export.csv"
+
+# high to low, add 1 to index to get to a string #
+TUNING = ["E", "C#", "F#", "D", "B", "A", "F#", "E", "D", "C", "A", "D"]
+
+# === STATIC CONFIG ===
+
+ALL_TYPES = [:major, :minor, :dom7] # unused, for reference
 
 ALL_NOTES = ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"]
 
-# high to low, add 1 to index to get to a string #
-TUNING = ["F#", "C#", "G#", "D#", "B", "G#", "F#", "D#", "B", "G#", "E", "B"]
-
-# need to choose a CLI tools library
-ROOT = "B"
-TYPES = [:major, :minor, :dom7]
-
 QUALITIES = {
-  major: "3",
-  minor: "b3",
-  # dom7 might not actually work yet but kl + ped needs implementing
+  major: ["3"],
+  minor: ["b3"],
   dom7: ["3", "b7"]
 }
 
+# TODO: use the 9+ qualities for QoL
 RELATIONS = [
   "Root",
   "b2",
@@ -45,6 +55,8 @@ RELATIONS = [
   "13"
 ]
 
+# === CODE ===
+
 def shift_key(to:)
   ALL_NOTES
     .slice_before(to)
@@ -66,29 +78,59 @@ def relation(key:, note:)
   RELATIONS[interval]
 end
 
-def convert(key:, fret:)
+# returns a fret, which is several columns and rows
+# long-term, might be better to do this less similarly to how it's done irl
+def convert_fret(key:, fret:)
   shift_tuning(key:, fret:)
     .map
     .with_index do |note, idx|
-      [idx + 1, note, relation(key:, note:)]
+      fret_num = idx.zero? ? fret : ""
+      [fret_num, idx + 1, note, relation(key:, note:)]
     end
+    # TODO - header could be better suited somewhere else
+    .tap { |shifted| shifted.prepend(["Fr", "Str", "Note", "#"]) }
 end
+
+# check if the given fret has all of the required chord qualities for configured chords
+# e.g. a major chord must have a 3, but a dom 7 must have a 3 and a b7
+def has_valid_chord?(fret:)
+  notes = fret.transpose[3]
+  TYPES.any? do |type|
+    QUALITIES[type].all? { |qual| notes.include?(qual) }
+  end
+end
+
+def print_to_terminal(columns:)
+  "Printing valid chords to terminal..."
+
+  columns.map do |col|
+    puts Terminal::Table.new(
+      headings: col[0],
+      rows: col[1..-1]
+    )
+  end
+end
+
+def export_csv(columns:)
+  "Exporting valid chords to CSV at #{CSV_FILENAME}..."
+  CSV.open(CSV_FILENAME, "w") do |csv|
+    columns.transpose.each { |col| csv << col.flatten }
+  end
+end
+
+# ======
 
 def main
   key = shift_key(to: ROOT)
-  wanted_chord_qualities = QUALITIES.slice(*TYPES).values
 
-  (0..3).each do |fret|
-    rows = convert(key:, fret:)
-    # skip this fret if it doesn't represent a requested chord type
-    next unless rows.flatten.intersect?(wanted_chord_qualities)
+  # the copedent is read column-wise, so to make partial calculations,
+  # it only makes sense to do so in columnar blocks
+  columns = (0..4)
+    .map { |fret| convert_fret(key:, fret:) }
+    .select { |fret| has_valid_chord?(fret:) }
 
-    puts Terminal::Table.new(
-      title: "Fret #{fret}",
-      headings: ["Str", "Note", "#"],
-      rows:
-    )
-  end
+  print_to_terminal(columns:) if ENABLE_CLI
+  export_csv(columns:) if ENABLE_CSV
 end
 
 main
