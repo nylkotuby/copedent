@@ -9,16 +9,15 @@ require "terminal-table"
 ALL_NOTES = ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"]
 
 # high to low, add 1 to index to get to a string #
-TUNING = ["F#", "C#", "G#", "D#", "B", "G#", "F#", "D#", "B", "G#", "E", "B"]
+TUNING = ["E", "C#", "F#", "D", "B", "A", "F#", "E", "D", "C", "A", "D"]
 
 # need to choose a CLI tools library
-ROOT = "B"
+ROOT = "D"
 TYPES = [:major, :minor, :dom7]
 
 QUALITIES = {
   major: "3",
   minor: "b3",
-  # dom7 might not actually work yet but kl + ped needs implementing
   dom7: ["3", "b7"]
 }
 
