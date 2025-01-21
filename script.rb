@@ -4,6 +4,8 @@
 require "terminal-table"
 require "csv"
 
+# TODO - look for multiple combinations of the triad for chord quality
+#        ie need any?([1,3], [3,5]) for major, not just 3
 # TODO NEXT - add pedals and knee levers
 # TODO add a hash or first-class object for frets
 # TODO need to choose a CLI tools library
@@ -25,6 +27,7 @@ ALL_TYPES = [:major, :minor, :dom7] # unused, for reference
 
 ALL_NOTES = ["E", "F", "F#", "G", "G#", "A", "A#", "B", "C", "C#", "D", "D#"]
 
+# TODO - look for multiple combinations of the triad
 QUALITIES = {
   major: ["3"],
   minor: ["b3"],
@@ -87,8 +90,6 @@ def convert_fret(key:, fret:)
       fret_num = idx.zero? ? fret : ""
       [fret_num, idx + 1, note, relation(key:, note:)]
     end
-    # TODO - header could be better suited somewhere else
-    .tap { |shifted| shifted.prepend(["Fr", "Str", "Note", "#"]) }
 end
 
 # check if the given fret has all of the required chord qualities for configured chords
@@ -101,20 +102,23 @@ def has_valid_chord?(fret:)
 end
 
 def print_to_terminal(columns:)
-  "Printing valid chords to terminal..."
+  puts "Printing valid chords to terminal..."
 
   columns.map do |col|
     puts Terminal::Table.new(
-      headings: col[0],
-      rows: col[1..-1]
+      headings: ["Fr", "Str", "Note", "#"],
+      rows: col,
     )
   end
 end
 
 def export_csv(columns:)
-  "Exporting valid chords to CSV at #{CSV_FILENAME}..."
+  puts "Exporting valid chords to CSV at #{CSV_FILENAME}..."
+
   CSV.open(CSV_FILENAME, "w") do |csv|
-    columns.transpose.each { |col| csv << col.flatten }
+    csv << ["Fret", "Str", "Note", "#"] * columns.length
+
+    columns.transpose.each { |row| csv << row.flatten }
   end
 end
 
