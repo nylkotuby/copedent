@@ -1,3 +1,9 @@
+PATH
+  remote: .
+  specs:
+    copedent (0.1.0)
+      terminal-table
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -10,7 +16,7 @@ PLATFORMS
   x86_64-linux
 
 DEPENDENCIES
-  terminal-table (~> 3.0)
+  copedent!
 
 BUNDLED WITH
    2.6.2

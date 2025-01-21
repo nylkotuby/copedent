@@ -2,6 +2,5 @@
 
 source "https://rubygems.org"
 
-# gem "rails"
-
-gem "terminal-table", "~> 3.0"
+# Specify your gem's dependencies in copedent.gemspec
+gemspec
