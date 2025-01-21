@@ -7,6 +7,7 @@ require_relative "../lib/copedent"
 
 ROOT = "D"
 TYPES = [:major, :minor, :dom7]
+MAX_VISIBLE_FRETS = 4
 ENABLE_CLI = true
 ENABLE_CSV = true
 CSV_FILENAME = "#{TYPES.map(&:to_s).join("_")}_#{Time.now.to_i}_export.csv"
@@ -17,16 +18,19 @@ TUNING = ["E", "C#", "F#", "D", "B", "A", "F#", "E", "D", "C", "A", "D"]
 # ========
 
 def main
-  key = Copedent::shift_key(to: ROOT)
+  analysis = Copedent::Sheet.new(
+    tuning: TUNING,
+    root: ROOT,
+    types: TYPES
+  ).analyze()
 
-  # the copedent is read column-wise, so to make partial calculations,
-  # it only makes sense to do so in columnar blocks
-  columns = (0..4)
-    .map { |fret| Copedent::convert_fret(tuning: TUNING, key:, fret:) }
-    .select { |fret| Copedent::has_valid_chord?(fret:, types: TYPES) }
+  if ENABLE_CLI
+    Copedent::Printer.print_to_terminal(analysis:, max_visible_frets: MAX_VISIBLE_FRETS)
+  end
 
-  Copedent::print_to_terminal(columns:) if ENABLE_CLI
-  Copedent::export_csv(columns:, filename: CSV_FILENAME) if ENABLE_CSV
+  if ENABLE_CSV
+    Copedent::Printer.export_csv(analysis:, filename: CSV_FILENAME)
+  end
 end
 
 main
