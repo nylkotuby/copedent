@@ -16,7 +16,7 @@ module Copedent
       (0..11)
         .map { |fret_num| Fret.new(tuning: @tuning, key: @key, changelist: @changelist, fret_num:) }
         .select { |fret| fret.has_valid_chord?(types: @chord_types) }
-        .flat_map(&:generate_columns)
+        .flat_map { |fret| fret.generate_columns(changelist: @changelist) }
     end
 
     private

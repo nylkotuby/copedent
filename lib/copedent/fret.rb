@@ -34,17 +34,37 @@ module Copedent
     end
 
     # return array of different valid change combos that work on this fret
-    def generate_columns
-      [@tuning].map { |mapping| generate_column_for(mapping:) }
+    def generate_columns(changelist:)
+      single_mods = changelist.map do |name, list|
+        overrides = list.each_with_object({}) do |change, hsh|
+          hsh[change.note_index] = change.note
+        end
+
+        generate_column_for(mapping: @tuning, overrides:, names: [name])
+      end
+
+      open = generate_column_for(mapping: @tuning)
+
+      [open] | single_mods
     end
 
     private
 
-    def generate_column_for(mapping:)
-      mapping.map.with_index do |note, idx|
-        fret = idx.zero? ? @fret_num : ""
-        [fret, idx + 1, note, relation(note:)]
+    # be VERY careful
+    # we are aligned on string index here but it would be better to use string # in the future
+    def generate_column_for(mapping:, overrides: {}, names: [])
+      col = mapping.map.with_index do |note, idx|
+        note = overrides[idx] unless overrides[idx].nil?
+        ["", idx + 1, note, relation(note:)]
       end
+
+      # add extra info to the reserved title column
+      col[0][0] = @fret_num
+      names.each_with_index do |name, idx|
+        col[1 + idx][0] = name.to_s
+      end
+
+      col
     end
 
     def relations_for(tuning:, fret_num:)
