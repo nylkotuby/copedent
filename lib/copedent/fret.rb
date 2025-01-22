@@ -2,7 +2,6 @@
 # like several pedal and lever combinations that would work at this fret
 # long-term, might be better to do this less similarly to how it's done irl
 module Copedent
-  # TODO - look for multiple combinations of the triad
   QUALITIES = {
     major: [["Root", "3"], ["3", "maj7"]],
     minor: [["Root", "b3"], ["b3", "b7"]],
@@ -22,7 +21,8 @@ module Copedent
       @key = key
       @tuning = shift_tuning(tuning:, fret_num:)
       @fret_num = fret_num
-      @relations = relations_for(tuning:, fret_num:)
+      @changelist = changelist
+      @modified_tunings = tunings_for(changelist:, fret_num:)
     end
 
     # TODO: make this not static, probably
@@ -31,46 +31,55 @@ module Copedent
     def self.has_valid_chord?(fret:, types:)
       notes = fret.transpose[3]
       types.any? do |type|
-        QUALITIES[type].any? { |combo| combo.all? { |qual| notes.include?(qual) } }
+        QUALITIES[type].any? do |combo|
+          combo.all? { |qual| notes.include?(qual) }
+        end
       end
     end
 
     # return array of different valid change combos that work on this fret
     def generate_columns(changelist:)
-      single_mods = changelist.map do |name, list|
-        overrides = list.each_with_object({}) do |change, hsh|
-          hsh[change.note_index] = {note: change.note, name:}
-        end
-
-        generate_column_for(mapping: @tuning, overrides:, names: [name])
+      open = generate_column_for(mapping: @tuning)
+      changes = @modified_tunings.map do |name, list|
+        generate_column_for(mapping: list, name:)
       end
 
-      open = generate_column_for(mapping: @tuning)
-
-      [open] | single_mods
+      [open] | changes
     end
 
     private
 
+    def tunings_for(changelist:, fret_num:)
+      changelist.transform_values { |list| tuning_with_override(list:) }
+    end
+
+    def tuning_with_override(list: [])
+      @tuning.map.with_index do |default_note, idx|
+        if (change = list.detect { |ch| ch.note_index == idx })
+          change.note
+        else
+          default_note
+        end
+      end
+    end
+
     # be VERY careful
     # we are aligned on string index here but it would be better to use string # in the future
-    def generate_column_for(mapping:, overrides: {}, names: [])
+    def generate_column_for(mapping:, name: nil)
       col = mapping.map.with_index do |note, idx|
-        note = overrides[idx][:note] unless overrides[idx].nil?
         ["", idx + 1, note, relation(note:)]
       end
 
       # add extra info to the reserved title column
       col[0][0] = @fret_num
-      overrides.keys.each do |idx|
-        col[idx][0] = overrides[idx][:name].to_s
+
+      unless name.nil? # ignore open tuning
+        @changelist[name].each do |change|
+          col[change.note_index][0] = name.to_s
+        end
       end
 
       col
-    end
-
-    def relations_for(tuning:, fret_num:)
-      @tuning.map { |note| relation(note:) }
     end
 
     def shift_tuning(tuning:, fret_num:)
