@@ -15,8 +15,8 @@ module Copedent
       # it only makes sense to do so in columnar blocks
       (0..11)
         .map { |fret_num| Fret.new(tuning: @tuning, key: @key, changelist: @changelist, fret_num:) }
-        .select { |fret| fret.has_valid_chord?(types: @chord_types) }
         .flat_map { |fret| fret.generate_columns(changelist: @changelist) }
+        .select { |col| Fret.has_valid_chord?(fret: col, types: @chord_types) }
     end
 
     private

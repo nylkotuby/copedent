@@ -4,9 +4,9 @@
 module Copedent
   # TODO - look for multiple combinations of the triad
   QUALITIES = {
-    major: ["3"],
-    minor: ["b3"],
-    dom7: ["3", "b7"]
+    major: [["Root", "3"], ["3", "maj7"]],
+    minor: [["Root", "b3"], ["b3", "b7"]],
+    dom7: [["3", "b7"]]
   }
 
   # TODO: use the 9+ qualities for QoL
@@ -25,11 +25,13 @@ module Copedent
       @relations = relations_for(tuning:, fret_num:)
     end
 
+    # TODO: make this not static, probably
     # check if the given fret has all of the required chord qualities for configured chords
     # e.g. a major chord must have a 3, but a dom 7 must have a 3 and a b7
-    def has_valid_chord?(types:)
+    def self.has_valid_chord?(fret:, types:)
+      notes = fret.transpose[3]
       types.any? do |type|
-        QUALITIES[type].all? { |qual| @relations.include?(qual) }
+        QUALITIES[type].any? { |combo| combo.all? { |qual| notes.include?(qual) } }
       end
     end
 
