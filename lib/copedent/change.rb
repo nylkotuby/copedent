@@ -14,10 +14,12 @@ module Copedent
       @string - 1
     end
 
-    # ruby pattern would be to name `note` and memoize, but i find this misleading and bad
-    # it's good to break patterns sometimes
     def set_note(tuning:, key:)
-      @note = shift_note(note: tuning[note_index], amount: @modifier, key:)
+      @note = shift_note(
+        note: tuning[note_index],
+        amount: @modifier,
+        key:
+      )
     end
 
     def validate!

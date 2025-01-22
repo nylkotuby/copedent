@@ -22,12 +22,12 @@ module Copedent
       @key = key
       @tuning = shift_tuning(tuning:, fret_num:)
       @fret_num = fret_num
-      @changelist = changelist
-      @modified_tunings = tunings_for(changelist:, fret_num:)
+      @changelist = create_changelist(changelist:)
+      @modified_tunings = tunings_for(changelist: @changelist, fret_num:)
     end
 
     # return array of different valid change combos that work on this fret
-    def generate_columns(changelist:, types:)
+    def generate_columns(types:)
       if tuning_has_valid_chord?(tuning: @tuning, types:)
         open = generate_column_for(mapping: @tuning)
       end
@@ -102,6 +102,16 @@ module Copedent
           default_note
         end
       end
+    end
+
+    def create_changelist(changelist:)
+      raise CopedentError.new("Must be a Hash") unless changelist.is_a?(Hash)
+
+      changelist.each { |_, list| apply_change(list:) }
+    end
+
+    def apply_change(list:)
+      list.map { |change| change.set_note(tuning: @tuning, key: @key) }
     end
 
     def shift_tuning(tuning:, fret_num:)
