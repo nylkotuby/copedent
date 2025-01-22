@@ -16,6 +16,7 @@ module Copedent
     "11", "#11", "b13", "13"
   ]
 
+  # TODO - don't special case open tuning
   class Fret
     def initialize(tuning:, key:, fret_num:, changelist:)
       @key = key
@@ -25,40 +26,31 @@ module Copedent
       @modified_tunings = tunings_for(changelist:, fret_num:)
     end
 
-    # TODO: make this not static, probably
-    # check if the given fret has all of the required chord qualities for configured chords
-    # e.g. a major chord must have a 3, but a dom 7 must have a 3 and a b7
-    def self.has_valid_chord?(fret:, types:)
-      notes = fret.transpose[3]
-      types.any? do |type|
-        QUALITIES[type].any? do |combo|
-          combo.all? { |qual| notes.include?(qual) }
-        end
-      end
-    end
-
     # return array of different valid change combos that work on this fret
-    def generate_columns(changelist:)
-      open = generate_column_for(mapping: @tuning)
-      changes = @modified_tunings.map do |name, list|
-        generate_column_for(mapping: list, name:)
+    def generate_columns(changelist:, types:)
+      if tuning_has_valid_chord?(tuning: @tuning, types:)
+        open = generate_column_for(mapping: @tuning)
       end
 
-      [open] | changes
+      changes =
+        @modified_tunings
+          .select { |_, list| tuning_has_valid_chord?(tuning: list, types:) }
+          .map { |name, list| generate_column_for(mapping: list, name:) }
+
+      changes
+        .unshift(open)
+        .compact
     end
 
     private
 
-    def tunings_for(changelist:, fret_num:)
-      changelist.transform_values { |list| tuning_with_override(list:) }
-    end
-
-    def tuning_with_override(list: [])
-      @tuning.map.with_index do |default_note, idx|
-        if (change = list.detect { |ch| ch.note_index == idx })
-          change.note
-        else
-          default_note
+    # TODO: optimization - should save the relation map w/the tuning map
+    # so we don't re-generate on column generation
+    def tuning_has_valid_chord?(tuning:, types:)
+      notes = tuning.map { |note| relation(note:) }
+      types.any? do |type|
+        QUALITIES[type].any? do |combo|
+          combo.all? { |qual| notes.include?(qual) }
         end
       end
     end
@@ -80,6 +72,20 @@ module Copedent
       end
 
       col
+    end
+
+    def tunings_for(changelist:, fret_num:)
+      changelist.transform_values { |list| tuning_with_override(list:) }
+    end
+
+    def tuning_with_override(list: [])
+      @tuning.map.with_index do |default_note, idx|
+        if (change = list.detect { |ch| ch.note_index == idx })
+          change.note
+        else
+          default_note
+        end
+      end
     end
 
     def shift_tuning(tuning:, fret_num:)
