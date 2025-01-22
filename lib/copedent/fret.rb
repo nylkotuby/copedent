@@ -1,4 +1,5 @@
-# models a single fret, or single complete column of analysis
+# models a single fret, which might return several different columns of analysis
+# like several pedal and lever combinations that would work at this fret
 # long-term, might be better to do this less similarly to how it's done irl
 module Copedent
   # TODO - look for multiple combinations of the triad
@@ -17,13 +18,11 @@ module Copedent
   ]
 
   class Fret
-    attr_accessor :data
-
-    def initialize(tuning:, key:, fret_num:)
-      @tuning = shift_tuning(tuning:, key:, fret_num:)
+    def initialize(tuning:, key:, fret_num:, changelist:)
       @key = key
+      @tuning = shift_tuning(tuning:, fret_num:)
       @fret_num = fret_num
-      @relations = relations_for(tuning:, key:, fret_num:)
+      @relations = relations_for(tuning:, fret_num:)
     end
 
     # check if the given fret has all of the required chord qualities for configured chords
@@ -34,39 +33,37 @@ module Copedent
       end
     end
 
-    def apply_changes(changes)
-      raise CopedentError.new("Must be an Array") unless changes.is_a?(Array)
-
-      changes.map { |change| apply_change(change) }
-    end
-
-    # used for printing
-    def generate_column
-      @tuning.map.with_index do |note, idx|
-        fret = idx.zero? ? @fret_num : ""
-        [fret, idx + 1, note, relation(key: @key, note:)]
-      end
+    # return array of different valid change combos that work on this fret
+    def generate_columns
+      [@tuning].map { |mapping| generate_column_for(mapping:) }
     end
 
     private
 
-    def apply_change(change)
-    end
-
-    def relations_for(tuning:, key:, fret_num:)
-      @tuning.map { |note| relation(key:, note:) }
-    end
-
-    def shift_tuning(tuning:, key:, fret_num:)
-      tuning.map do |note|
-        current_index = key.find_index(note)
-        new_index = (current_index + fret_num) % key.length
-        key[new_index]
+    def generate_column_for(mapping:)
+      mapping.map.with_index do |note, idx|
+        fret = idx.zero? ? @fret_num : ""
+        [fret, idx + 1, note, relation(note:)]
       end
     end
 
-    def relation(key:, note:)
-      interval = key.find_index(note)
+    def relations_for(tuning:, fret_num:)
+      @tuning.map { |note| relation(note:) }
+    end
+
+    def shift_tuning(tuning:, fret_num:)
+      tuning.map { |note| shift_note(note:, amount: fret_num) }
+    end
+
+    # TODO - changer module for DRY?
+    def shift_note(note:, amount:)
+      current_index = @key.find_index(note)
+      new_index = (current_index + amount) % @key.length
+      @key[new_index]
+    end
+
+    def relation(note:)
+      interval = @key.find_index(note)
       RELATIONS[interval]
     end
   end

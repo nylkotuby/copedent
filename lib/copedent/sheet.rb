@@ -4,20 +4,19 @@ module Copedent
     def initialize(root:, tuning:, changelist:, opts:)
       @root = root
       @tuning = tuning
-      @changelist = changelist
+      @key = shift_key(to: @root)
+      @changelist = apply_changelist(changelist:)
       @chord_types = opts[:chord_types]
       @opts = opts
     end
 
     def analyze
-      key = shift_key(to: @root)
-
       # the copedent is read column-wise, so to make partial calculations,
       # it only makes sense to do so in columnar blocks
       (0..11)
-        .map { |fret_num| Fret.new(tuning: @tuning, key:, fret_num:) }
+        .map { |fret_num| Fret.new(tuning: @tuning, key: @key, changelist: @changelist, fret_num:) }
         .select { |fret| fret.has_valid_chord?(types: @chord_types) }
-        .map(&:generate_column)
+        .flat_map(&:generate_columns)
     end
 
     private
@@ -28,6 +27,16 @@ module Copedent
         .to_a # rails .split() would avoid the type fixup
         .reverse
         .flatten
+    end
+
+    def apply_changelist(changelist:)
+      raise CopedentError.new("Must be an Array") unless changelist.is_a?(Hash)
+
+      changelist.each { |_, list| apply_change(list:) }
+    end
+
+    def apply_change(list:)
+      list.map { |change| change.set_note(tuning: @tuning, key: @key) }
     end
   end
 end

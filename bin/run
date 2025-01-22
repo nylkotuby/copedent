@@ -27,7 +27,7 @@ CHANGELIST = {
   ],
   p2: [
     Copedent::Change.new(string: 7, modifier: 1),
-    Copedent::Change.new(string: 3, modifier: 2)
+    Copedent::Change.new(string: 3, modifier: 1)
   ],
   p3: [
     Copedent::Change.new(string: 6, modifier: 2),
