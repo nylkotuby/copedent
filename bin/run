@@ -6,22 +6,85 @@ require_relative "../lib/copedent"
 # === PER-RUN USER CONFIG ===
 
 ROOT = "D"
-TYPES = [:major, :minor, :dom7]
+
+CHORD_TYPES = [:major, :minor, :dom7]
+OPEN_VOICINGS = true
+MAX_COMBOS = 3
+OPTS = {chord_types: CHORD_TYPES, open_voicings: OPEN_VOICINGS, max_combos: MAX_COMBOS}
+
 MAX_VISIBLE_FRETS = 4
+CSV_FILENAME = "#{CHORD_TYPES.map(&:to_s).join("_")}_#{Time.now.to_i}_export.csv"
 ENABLE_CLI = true
 ENABLE_CSV = true
-CSV_FILENAME = "#{TYPES.map(&:to_s).join("_")}_#{Time.now.to_i}_export.csv"
 
 # high to low, add 1 to index to get to a string #
 TUNING = ["E", "C#", "F#", "D", "B", "A", "F#", "E", "D", "C", "A", "D"]
+
+CHANGELIST = {
+  p1: [
+    Copedent::Change.new(string: 6, modifier: 2),
+    Copedent::Change.new(string: 4, modifier: 2)
+  ],
+  p2: [
+    Copedent::Change.new(string: 7, modifier: 1),
+    Copedent::Change.new(string: 3, modifier: 1)
+  ],
+  p3: [
+    Copedent::Change.new(string: 6, modifier: 2),
+    Copedent::Change.new(string: 11, modifier: 2)
+  ],
+  p4: [
+    Copedent::Change.new(string: 6, modifier: -2),
+    Copedent::Change.new(string: 12, modifier: 2)
+  ],
+  p5: [
+    Copedent::Change.new(string: 8, modifier: -1),
+    Copedent::Change.new(string: 10, modifier: -1),
+    Copedent::Change.new(string: 11, modifier: -3),
+    Copedent::Change.new(string: 12, modifier: -3)
+  ],
+  p6: [
+    Copedent::Change.new(string: 6, modifier: -1),
+    Copedent::Change.new(string: 10, modifier: -1),
+    Copedent::Change.new(string: 11, modifier: -1),
+    Copedent::Change.new(string: 12, modifier: 2)
+  ],
+  p7: [
+    Copedent::Change.new(string: 3, modifier: 1),
+    Copedent::Change.new(string: 7, modifier: -1)
+  ],
+  lkl: [
+    Copedent::Change.new(string: 4, modifier: -1),
+    Copedent::Change.new(string: 9, modifier: -1)
+  ],
+  lkv: [
+    Copedent::Change.new(string: 1, modifier: 2),
+    Copedent::Change.new(string: 2, modifier: 1),
+    Copedent::Change.new(string: 7, modifier: -2)
+  ],
+  lkr: [
+    Copedent::Change.new(string: 4, modifier: 1),
+    Copedent::Change.new(string: 9, modifier: 1)
+  ],
+  rkl: [
+    Copedent::Change.new(string: 2, modifier: -2),
+    Copedent::Change.new(string: 5, modifier: -1)
+  ],
+  rkr: [
+    Copedent::Change.new(string: 3, modifier: -2),
+    Copedent::Change.new(string: 10, modifier: -1),
+    Copedent::Change.new(string: 11, modifier: -2)
+  ],
+}
 
 # ========
 
 def main
   analysis = Copedent::Sheet.new(
-    tuning: TUNING,
     root: ROOT,
-    types: TYPES
+    tuning: TUNING,
+    changelist: CHANGELIST,
+    opts: OPTS
   ).analyze()
 
   if ENABLE_CLI
