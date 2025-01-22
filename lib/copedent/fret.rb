@@ -35,6 +35,7 @@ module Copedent
       changes =
         @modified_tunings
           .select { |_, list| tuning_has_valid_chord?(tuning: list, types:) }
+          .select { |name, list| change_modified_chord_tone?(name:, types:) }
           .map { |name, list| generate_column_for(mapping: list, name:) }
 
       changes
@@ -43,6 +44,21 @@ module Copedent
     end
 
     private
+
+    # tell if this change raised/lowered to a chord tone,
+    # which makes it of interest to the player.
+    # restricts the number of possible options shown to a reasonable set
+    def change_modified_chord_tone?(name:, types:)
+      # any single chord tone is fine for now
+      qualities = types.flat_map do |type|
+        QUALITIES[type].flatten.uniq - ["Root"]
+      end
+
+      # TODO - is any change in the changelist accurate, or do we need to be more granular
+      @changelist[name].any? do |change|
+        qualities.include?(relation(note: change.note))
+      end
+    end
 
     # TODO: optimization - should save the relation map w/the tuning map
     # so we don't re-generate on column generation
