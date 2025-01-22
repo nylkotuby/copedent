@@ -2,7 +2,6 @@
 # like several pedal and lever combinations that would work at this fret
 # long-term, might be better to do this less similarly to how it's done irl
 module Copedent
-  # TODO - look for multiple combinations of the triad
   QUALITIES = {
     major: [["Root", "3"], ["3", "maj7"]],
     minor: [["Root", "b3"], ["b3", "b7"]],
@@ -17,60 +16,108 @@ module Copedent
     "11", "#11", "b13", "13"
   ]
 
+  # TODO - don't special case open tuning
   class Fret
     def initialize(tuning:, key:, fret_num:, changelist:)
       @key = key
       @tuning = shift_tuning(tuning:, fret_num:)
       @fret_num = fret_num
-      @relations = relations_for(tuning:, fret_num:)
-    end
-
-    # TODO: make this not static, probably
-    # check if the given fret has all of the required chord qualities for configured chords
-    # e.g. a major chord must have a 3, but a dom 7 must have a 3 and a b7
-    def self.has_valid_chord?(fret:, types:)
-      notes = fret.transpose[3]
-      types.any? do |type|
-        QUALITIES[type].any? { |combo| combo.all? { |qual| notes.include?(qual) } }
-      end
+      @changelist = create_changelist(changelist:)
+      @modified_tunings = tunings_for(changelist: @changelist, fret_num:)
     end
 
     # return array of different valid change combos that work on this fret
-    def generate_columns(changelist:)
-      single_mods = changelist.map do |name, list|
-        overrides = list.each_with_object({}) do |change, hsh|
-          hsh[change.note_index] = {note: change.note, name:}
-        end
-
-        generate_column_for(mapping: @tuning, overrides:, names: [name])
+    def generate_columns(types:)
+      if tuning_has_valid_chord?(tuning: @tuning, types:)
+        open = generate_column_for(mapping: @tuning)
       end
 
-      open = generate_column_for(mapping: @tuning)
+      changes =
+        @modified_tunings
+          .select { |_, list| tuning_has_valid_chord?(tuning: list, types:) }
+          .select { |name, list| change_modified_chord_tone?(name:, types:) }
+          .map { |name, list| generate_column_for(mapping: list, name:) }
 
-      [open] | single_mods
+      changes
+        .unshift(open)
+        .compact
     end
 
     private
 
+    # tell if this change raised/lowered to a chord tone,
+    # which makes it of interest to the player.
+    # restricts the number of possible options shown to a reasonable set
+    def change_modified_chord_tone?(name:, types:)
+      # any single chord tone is fine for now
+      qualities = types.flat_map do |type|
+        QUALITIES[type].flatten.uniq - ["Root"]
+      end
+
+      @changelist[name].any? do |change|
+        qualities.include?(relation(note: change.note))
+      end
+    end
+
+    # TODO: optimization - should save the relation map w/the tuning map
+    # so we don't re-generate on column generation
+    def tuning_has_valid_chord?(tuning:, types:)
+      notes = tuning.map { |note| relation(note:) }
+      types.any? do |type|
+        QUALITIES[type].any? do |combo|
+          combo.all? { |qual| notes.include?(qual) }
+        end
+      end
+    end
+
     # be VERY careful
     # we are aligned on string index here but it would be better to use string # in the future
-    def generate_column_for(mapping:, overrides: {}, names: [])
+    def generate_column_for(mapping:, name: nil)
       col = mapping.map.with_index do |note, idx|
-        note = overrides[idx][:note] unless overrides[idx].nil?
         ["", idx + 1, note, relation(note:)]
       end
 
       # add extra info to the reserved title column
       col[0][0] = @fret_num
-      overrides.keys.each do |idx|
-        col[idx][0] = overrides[idx][:name].to_s
+
+      unless name.nil? # ignore open tuning
+        @changelist[name].each do |change|
+          col[change.note_index][0] = name.to_s
+        end
       end
 
       col
     end
 
-    def relations_for(tuning:, fret_num:)
-      @tuning.map { |note| relation(note:) }
+    def tunings_for(changelist:, fret_num:)
+      changelist.transform_values { |list| tuning_with_override(list:) }
+    end
+
+    def tuning_with_override(list: [])
+      @tuning.map.with_index do |default_note, idx|
+        if (change = list.detect { |ch| ch.note_index == idx })
+          change.note
+        else
+          default_note
+        end
+      end
+    end
+
+    def create_changelist(changelist:)
+      raise CopedentError.new("Must be a Hash") unless changelist.is_a?(Hash)
+
+      changelist.transform_values { |list| apply_change(list:) }
+    end
+
+    def apply_change(list:)
+      list.map do |change|
+        Change.new(
+          string: change[:string],
+          modifier: change[:modifier],
+          tuning: @tuning,
+          key: @key
+        )
+      end
     end
 
     def shift_tuning(tuning:, fret_num:)

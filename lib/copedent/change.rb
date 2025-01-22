@@ -5,19 +5,22 @@ module Copedent
   class Change
     attr_accessor :string, :modifier, :note
 
-    def initialize(string:, modifier:)
+    def initialize(string:, modifier:, tuning:, key:)
       @string = string
       @modifier = modifier
+      @note = set_note(tuning:, key:)
     end
 
     def note_index
       @string - 1
     end
 
-    # ruby pattern would be to name `note` and memoize, but i find this misleading and bad
-    # it's good to break patterns sometimes
     def set_note(tuning:, key:)
-      @note = shift_note(note: tuning[note_index], amount: @modifier, key:)
+      @note = shift_note(
+        note: tuning[note_index],
+        amount: @modifier,
+        key:
+      )
     end
 
     def validate!

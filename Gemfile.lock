@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    copedent (0.1.0)
+    copedent (1.0.0)
       terminal-table
 
 GEM

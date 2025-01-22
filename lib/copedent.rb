@@ -10,10 +10,8 @@ require "terminal-table"
 require "csv"
 require "pry"
 
-# TODO - look for multiple combinations of the triad for chord quality
-#        ie need any?([1,3], [3,5]) for major, not just 3
-# TODO NEXT - add pedals and knee levers
-# TODO add a hash or first-class object for frets
+# TODO - if the pedal/lever doesn't create a chord tone,
+# don't add it to the output
 # TODO need to choose a CLI tools library
 
 module Copedent
