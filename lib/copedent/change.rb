@@ -5,9 +5,10 @@ module Copedent
   class Change
     attr_accessor :string, :modifier, :note
 
-    def initialize(string:, modifier:)
+    def initialize(string:, modifier:, tuning:, key:)
       @string = string
       @modifier = modifier
+      @note = set_note(tuning:, key:)
     end
 
     def note_index

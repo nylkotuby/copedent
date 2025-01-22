@@ -54,7 +54,6 @@ module Copedent
         QUALITIES[type].flatten.uniq - ["Root"]
       end
 
-      # TODO - is any change in the changelist accurate, or do we need to be more granular
       @changelist[name].any? do |change|
         qualities.include?(relation(note: change.note))
       end
@@ -107,11 +106,18 @@ module Copedent
     def create_changelist(changelist:)
       raise CopedentError.new("Must be a Hash") unless changelist.is_a?(Hash)
 
-      changelist.each { |_, list| apply_change(list:) }
+      changelist.transform_values { |list| apply_change(list:) }
     end
 
     def apply_change(list:)
-      list.map { |change| change.set_note(tuning: @tuning, key: @key) }
+      list.map do |change|
+        Change.new(
+          string: change[:string],
+          modifier: change[:modifier],
+          tuning: @tuning,
+          key: @key
+        )
+      end
     end
 
     def shift_tuning(tuning:, fret_num:)
