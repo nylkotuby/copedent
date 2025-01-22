@@ -20,32 +20,41 @@ module Copedent
     attr_accessor :data
 
     def initialize(tuning:, key:, fret_num:)
-      @tuning = tuning
+      @tuning = shift_tuning(tuning:, key:, fret_num:)
       @key = key
       @fret_num = fret_num
-      # TODO: revisit this - refactor-driven design
-      @data = convert_fret(tuning:, key:, fret_num:)
+      @relations = relations_for(tuning:, key:, fret_num:)
     end
 
     # check if the given fret has all of the required chord qualities for configured chords
     # e.g. a major chord must have a 3, but a dom 7 must have a 3 and a b7
     def has_valid_chord?(types:)
-      # transpose is done since these are columns instead of rows
-      notes = @data.transpose[3]
       types.any? do |type|
-        QUALITIES[type].all? { |qual| notes.include?(qual) }
+        QUALITIES[type].all? { |qual| @relations.include?(qual) }
+      end
+    end
+
+    def apply_changes(changes)
+      raise CopedentError.new("Must be an Array") unless changes.is_a?(Array)
+
+      changes.map { |change| apply_change(change) }
+    end
+
+    # used for printing
+    def generate_column
+      @tuning.map.with_index do |note, idx|
+        fret = idx.zero? ? @fret_num : ""
+        [fret, idx + 1, note, relation(key: @key, note:)]
       end
     end
 
     private
 
-    def convert_fret(tuning:, key:, fret_num:)
-      shift_tuning(tuning:, key:, fret_num:)
-        .map
-        .with_index do |note, idx|
-          fret = idx.zero? ? fret_num : ""
-          [fret, idx + 1, note, relation(key:, note:)]
-        end
+    def apply_change(change)
+    end
+
+    def relations_for(tuning:, key:, fret_num:)
+      @tuning.map { |note| relation(key:, note:) }
     end
 
     def shift_tuning(tuning:, key:, fret_num:)

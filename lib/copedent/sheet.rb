@@ -1,10 +1,12 @@
 # parameters and logic for a complete Sheet of analysis, which is several Frets
 module Copedent
   class Sheet
-    def initialize(tuning:, root:, types:)
-      @tuning = tuning
+    def initialize(root:, tuning:, changelist:, opts:)
       @root = root
-      @types = types
+      @tuning = tuning
+      @changelist = changelist
+      @chord_types = opts[:chord_types]
+      @opts = opts
     end
 
     def analyze
@@ -14,8 +16,8 @@ module Copedent
       # it only makes sense to do so in columnar blocks
       (0..11)
         .map { |fret_num| Fret.new(tuning: @tuning, key:, fret_num:) }
-        .select { |fret| fret.has_valid_chord?(types: @types) }
-        .map(&:data)
+        .select { |fret| fret.has_valid_chord?(types: @chord_types) }
+        .map(&:generate_column)
     end
 
     private
