@@ -38,29 +38,27 @@ CHANGELIST = {
     {string: 12, modifier: 2}
   ],
   p5: [
-    {string: 8, modifier: -1},
-    {string: 10, modifier: -1},
-    {string: 11, modifier: -3},
-    {string: 12, modifier: -3}
-  ],
-  p6: [
     {string: 6, modifier: -1},
     {string: 10, modifier: -1},
     {string: 11, modifier: -1},
     {string: 12, modifier: 2}
   ],
-  p7: [
+  p6: [
     {string: 3, modifier: 1},
     {string: 7, modifier: -1}
+  ],
+  p7: [
+    {string: 4, modifier: 2},
+    {string: 5, modifier: 2}
   ],
   lkl: [
     {string: 4, modifier: -1},
     {string: 9, modifier: -1}
   ],
   lkv: [
-    {string: 1, modifier: 2},
-    {string: 2, modifier: 1},
-    {string: 7, modifier: -2}
+    {string: 1, modifier: 1},
+    {string: 3, modifier: 1},
+    {string: 5, modifier: 1}
   ],
   lkr: [
     {string: 4, modifier: 1},
