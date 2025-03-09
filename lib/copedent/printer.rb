@@ -6,7 +6,7 @@ module Copedent
 
       analysis.take(max_visible_frets).map do |col|
         puts Terminal::Table.new(
-          headings: ["Fr", "Str", "Note", "#"],
+          headings: ["Fr", "Str", "Note", "#", "Name"],
           rows: col
         )
       end
@@ -16,7 +16,7 @@ module Copedent
       puts "Exporting valid chords to CSV at #{CSV_FILENAME}..."
 
       CSV.open(filename, "w") do |csv|
-        csv << ["Fret", "Str", "Note", "#"] * analysis.length
+        csv << ["Fret", "Str", "Note", "#", "Name"] * analysis.length
 
         analysis.transpose.each { |row| csv << row.flatten }
       end

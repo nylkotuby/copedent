@@ -74,19 +74,21 @@ module Copedent
     # we are aligned on string index here but it would be better to use string # in the future
     def generate_column_for(mapping:, name: nil)
       col = mapping.map.with_index do |note, idx|
-        ["", idx + 1, note, relation(note:)]
+        ["", idx + 1, note, relation(note:), change_for(name:, idx:)]
       end
 
       # add extra info to the reserved title column
       col[0][0] = @fret_num
 
-      unless name.nil? # ignore open tuning
-        @changelist[name].each do |change|
-          col[change.note_index][0] = name.to_s
-        end
-      end
-
       col
+    end
+
+    def change_for(name:, idx:)
+      return if name.nil? # open tuning
+
+      if @changelist[name].any? { |change| change.note_index == idx }
+        name.to_s
+      end
     end
 
     def tunings_for(changelist:, fret_num:)
